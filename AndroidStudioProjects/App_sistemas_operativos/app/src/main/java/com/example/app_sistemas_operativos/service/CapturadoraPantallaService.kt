@@ -131,11 +131,12 @@ class CapturadoraPantallaService : Service() {
                 // Envia el bitmap al servidor
 //                sendBitmapToServer(bitmap)
 
-                /*  Muestra el bitmap en el SurfaceView de mi activity. Fue usado para ejemplo, pero no es necesario
+
+                //  Muestra el bitmap en el SurfaceView de mi activity. Fue usado para ejemplo, pero no es necesario
                     val outputSurface = surface.lockCanvas(null)
                     outputSurface.drawBitmap(bitmap, 0f, 0f, null)
                     surface.unlockCanvasAndPost(outputSurface)
-                */
+
 
                 // Cierra la imagen capturada
                 image.close()
