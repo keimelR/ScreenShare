@@ -12,6 +12,7 @@ import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
 import android.widget.EditText
 
 
+
 class firstActivity : AppCompatActivity() {
     private lateinit var mediaProjectionManager: MediaProjectionManager
     private lateinit var surfaceView: SurfaceView
