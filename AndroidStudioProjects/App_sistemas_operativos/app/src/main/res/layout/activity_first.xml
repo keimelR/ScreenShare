@@ -17,19 +17,46 @@
         android:textSize="40sp" />
 
     <EditText
-        android:id="@+id/edit_text"
-        android:hint="Escribe la URL"
-        android:inputType="text"
-        android:layout_gravity="center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:id="@+id/serverPortEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Puerto" />
 
     <Button
-        android:id="@+id/button_capture"
+        android:id="@+id/serverButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:contentDescription="Captura"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:text="Iniciar Transmisión" />
+
+
+    <EditText
+        android:id="@+id/clientIpEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="IP" />
+
+    <EditText
+        android:id="@+id/clientPortEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Puerto" />
+
+    <Button
+        android:id="@+id/clientButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Ver Transmisión" />
+
+    <TextView
+        android:id="@+id/chatTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#000000"
+        android:layout_gravity="center"
+        android:textSize="16sp" />
 
     <SurfaceView
         android:id="@+id/surfaceView"

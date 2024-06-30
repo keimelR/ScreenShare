@@ -9,18 +9,31 @@ import android.app.Activity
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
+import android.widget.EditText
 
 
 class firstActivity : AppCompatActivity() {
     private lateinit var mediaProjectionManager: MediaProjectionManager
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
+    private lateinit var clientIp: EditText
+    private lateinit var clientPort: EditText
+    private lateinit var serverPort: EditText
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_first)
 
         surfaceView = findViewById(R.id.surfaceView)
+
+        //Puerto del servidor ingresado por el dispositivo que inicia la transmision
+        serverPort = findViewById(R.id.serverPortEditText)
+
+        //Direccion ip ingresado por el dispositivo que ve la transmision
+        clientIp = findViewById(R.id.clientIpEditText)
+        //Puerto del servidor ingresado por el dispositivo que ve la transmision
+        clientPort = findViewById(R.id.clientPortEditText)
         surfaceHolder = surfaceView.holder
 
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -39,8 +52,8 @@ class firstActivity : AppCompatActivity() {
             intent.putExtra(CapturadoraPantallaService.EXTRA_SURFACE, surfaceView.holder.surface)
 
             // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
-            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_IP, "192.168.1.100")
-            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, 8080)  // Cambia esto al puerto del servidor
+            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_IP, "localhost")
+            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, 7584)  // Cambia esto al puerto del servidor
 
             // Iniciar el servicio de captura de pantalla
             startService(intent)

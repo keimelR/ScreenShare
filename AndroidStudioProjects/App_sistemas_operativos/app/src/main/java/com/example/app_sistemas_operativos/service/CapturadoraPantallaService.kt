@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -17,7 +18,10 @@ import android.view.Surface
 import androidx.core.app.NotificationCompat
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import java.net.ServerSocket
 import java.net.Socket
+import android.util.Log
+import java.io.DataInputStream
 
 class CapturadoraPantallaService : Service() {
     // Variables para la captura de pantalla
@@ -29,8 +33,11 @@ class CapturadoraPantallaService : Service() {
 
     // Variables para el servidor
     private lateinit var socket: Socket
-    private var serverIp: String? = null
+    private var serverIp: String? = "localhost"
     private var serverPort: Int = 0
+    private lateinit var serverSocket: ServerSocket
+    private val clients = mutableListOf<Socket>()
+
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -109,8 +116,10 @@ class CapturadoraPantallaService : Service() {
             imageReader.surface, null, null
         )
 
-        // Conecta al servidor
-//        connectToServer()
+        // Creacion del servidor
+        createServer()
+        //Creacion del cliente
+        connectToServer()
 
         // Escucha los eventos de captura de pantalla
         imageReader.setOnImageAvailableListener({ reader ->
@@ -129,13 +138,13 @@ class CapturadoraPantallaService : Service() {
                 bitmap.copyPixelsFromBuffer(buffer)
 
                 // Envia el bitmap al servidor
-//                sendBitmapToServer(bitmap)
+                sendBitmapToServer(bitmap)
 
 
                 //  Muestra el bitmap en el SurfaceView de mi activity. Fue usado para ejemplo, pero no es necesario
-                    val outputSurface = surface.lockCanvas(null)
-                    outputSurface.drawBitmap(bitmap, 0f, 0f, null)
-                    surface.unlockCanvasAndPost(outputSurface)
+                val outputSurface = surface.lockCanvas(null)
+                outputSurface.drawBitmap(bitmap, 0f, 0f, null)
+                surface.unlockCanvasAndPost(outputSurface)
 
 
                 // Cierra la imagen capturada
@@ -156,10 +165,56 @@ class CapturadoraPantallaService : Service() {
             try {
                 // Crea un socket para conectar al servidor
                 socket = Socket(serverIp, serverPort)
+                Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $serverIp:$serverPort")
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }.start()
+    }
+
+    private fun createServer(){
+
+        Thread {
+            // Crea el servidor de sockets
+            serverSocket = ServerSocket(7584)
+            Log.d("CapturadoraPantallaSe", "Servidor iniciado en el puerto 7584")
+
+            while (true) {
+                val clientSocket = serverSocket.accept()
+                clients.add(clientSocket)
+                Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
+
+                Thread {
+                    clientHandler(clientSocket)
+                }.start()
+            }
+
+        }.start()
+    }
+
+    private fun clientHandler(clientSocket: Socket) {
+        try {
+            // Lógica para manejar la comunicación con el cliente
+            val inputStream = clientSocket.getInputStream()
+            val dataInputStream = DataInputStream(inputStream)
+
+            while (true) {
+                val byteArraySize = dataInputStream.readInt()
+                val byteArray = ByteArray(byteArraySize)
+                dataInputStream.readFully(byteArray)
+
+                // Convertir el byteArray en un Bitmap y mostrarlo en la interfaz de usuario
+                val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                // Aquí puedes hacer lo que necesites con el bitmap recibido, como mostrarlo en un ImageView
+
+                // Realizar cualquier otra lógica requerida con el bitmap recibido
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            // Cerrar el socket cuando finalice la comunicación con el cliente
+            clientSocket.close()
+        }
     }
 
     /*
@@ -169,23 +224,20 @@ class CapturadoraPantallaService : Service() {
     *   Envia el arreglo de bytes al servidor.
     */
     private fun sendBitmapToServer(bitmap: Bitmap) {
-        // Hilo para enviar el bitmap al servidor
+        // Convierte el bitmap a un arreglo de bytes
+        val byteArray = bitmapToByteArray(bitmap)
+
+        // Hilo para enviar el arreglo de bytes a todos los clientes
         Thread {
             try {
-                // Comprime el bitmap en un arreglo de bytes
-                val byteArray = bitmapToByteArray(bitmap)
-
-                // Obtiene el flujo de salida del socket
-                val outputStream = socket.getOutputStream()
-
-                // Escribe el tamaño del arreglo de bytes en el flujo de salida
-                val dataOutputStream = DataOutputStream(outputStream)
-
-                // Escribe el arreglo de bytes en el flujo de salida
-                dataOutputStream.writeInt(byteArray.size)
-                dataOutputStream.write(byteArray)
-                // Limpia el flujo de salida
-                dataOutputStream.flush()
+                // Recorre la lista de clientes y envía el arreglo de bytes a cada uno
+                for (clientSocket in clients) {
+                    val outputStream = clientSocket.getOutputStream()
+                    val dataOutputStream = DataOutputStream(outputStream)
+                    dataOutputStream.writeInt(byteArray.size)
+                    dataOutputStream.write(byteArray)
+                    dataOutputStream.flush()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
