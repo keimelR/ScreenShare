@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.app.Activity
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.widget.Button
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
 import android.widget.EditText
 
@@ -20,7 +21,7 @@ class firstActivity : AppCompatActivity() {
     private lateinit var clientIp: EditText
     private lateinit var clientPort: EditText
     private lateinit var serverPort: EditText
-
+    private lateinit var serverButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +38,15 @@ class firstActivity : AppCompatActivity() {
         clientPort = findViewById(R.id.clientPortEditText)
         surfaceHolder = surfaceView.holder
 
-        mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+        // Boton que inicia la transmision
+        serverButton = findViewById(R.id.serverButton)
+
+        // Escuchar el clic del botón
+        serverButton.setOnClickListener {
+            val intent = Intent(this, CapturadoraPantallaService::class.java)
+            mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -55,6 +63,9 @@ class firstActivity : AppCompatActivity() {
             // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
             intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_IP, "localhost")
             intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, 7584)  // Cambia esto al puerto del servidor
+
+            // Deshabilitar el botón del servidor
+            serverButton.isEnabled = false
 
             // Iniciar el servicio de captura de pantalla
             startService(intent)
