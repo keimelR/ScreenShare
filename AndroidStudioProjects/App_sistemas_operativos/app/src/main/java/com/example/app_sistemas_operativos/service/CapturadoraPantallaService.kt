@@ -2,6 +2,8 @@ package com.example.app_sistemas_operativos.service
 
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -14,6 +16,7 @@ import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.IBinder
 import android.view.Surface
 import androidx.core.app.NotificationCompat
@@ -34,7 +37,8 @@ class CapturadoraPantallaService : Service() {
 
     // Variables para el servidor
     private lateinit var socket: Socket
-    private var serverIp: String? = "localhost"
+    private var clientIp: String? = "localhost"
+    private var clientPort: Int = 0
     private var serverPort: Int = 0
     private lateinit var serverSocket: ServerSocket
     private val clients = mutableListOf<Socket>()
@@ -57,21 +61,46 @@ class CapturadoraPantallaService : Service() {
     *   Utiliza el intent con los datos enviados en onActivityResult para iniciar la captura de pantalla.
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Obtiene los datos enviados en el intent
-        val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_OK) ?: return START_NOT_STICKY
-        // Obtiene los datos enviados en el intent
-        val data = intent.getParcelableExtra<Intent>(EXTRA_DATA) ?: return START_NOT_STICKY
-        // Obtiene el SurfaceView del intent
-        surface = intent.getParcelableExtra(EXTRA_SURFACE) ?: return START_NOT_STICKY
-        // Obtiene los datos enviados en el intent
-        serverIp = intent.getStringExtra(EXTRA_SERVER_IP)
-        // Obtiene los datos enviados en el intent
-        serverPort = intent.getIntExtra(EXTRA_SERVER_PORT, 0)
+        if (intent == null) {
+            return START_NOT_STICKY
+        }
+        // Verifica si es el servidor
+        val isServer = intent.getBooleanExtra(EXTRA_IS_SERVER, false)
 
-        // Inicia la captura de pantalla
-        mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
-        startScreenCapture()
+        // Verifica en que modo se debe ejecutar el servicio
+        if (isServer) {
+            // Servidor
+
+            val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_OK)
+            val data = intent.getParcelableExtra<Intent>(EXTRA_DATA) ?: return START_NOT_STICKY
+            surface = intent.getParcelableExtra(EXTRA_SURFACE) ?: return START_NOT_STICKY
+
+            // Obtiene el puerto del servidor
+            serverPort = intent.getIntExtra(EXTRA_SERVER_PORT, 0)
+
+            mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
+
+            // Crea el servidor
+            createServer()
+
+            // Inicia la captura de pantalla
+            startScreenCapture()
+        } else {
+            // Cliente
+
+            // Obtiene los datos del cliente
+            clientIp = intent.getStringExtra(EXTRA_CLIENT_IP)
+            clientPort = intent.getIntExtra(EXTRA_CLIENT_PORT, 0)
+
+            // Conecta al servidor si los datos son validos
+            if (clientIp != null && clientPort != 0) {
+                Thread {
+                    connectToServer()
+                }.start()
+            }
+        }
+
         return START_STICKY
     }
 
@@ -82,15 +111,38 @@ class CapturadoraPantallaService : Service() {
     *   Ademas, es un requisito para que el servicio se ejecute en segundo plano.
     */
     private fun startForegroundService() {
+        createNotificationChannel() // Crear el canal de notificación si es necesario
+
         // Crea una notificacion para el servicio
-        val notification = NotificationCompat.Builder(this, "SCREEN_CAPTURE_CHANNEL")
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Captura de Pantalla")
             .setContentText("Capturando pantalla...")
+            .setPriority(NotificationCompat.PRIORITY_LOW) // Prioridad de la notificación
             .build()
 
         // Inicia el servicio en segundo plano
-        startForeground(1, notification)
+        startForeground(NOTIFICATION_ID, notification)
     }
+
+    /*
+    *   createNotificationChannel().
+    *
+    *   Crea un canal de notificacion para el servicio.
+    *   Este canal es necesario para que el servicio se ejecute en segundo plano para dispositivos con
+    *   Android 8 o superior.
+     */
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                CHANNEL_ID,
+                "Screen Capture Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(serviceChannel)
+        }
+    }
+
 
     /*
     *   startScreenCapture().
@@ -118,9 +170,9 @@ class CapturadoraPantallaService : Service() {
         )
 
         // Creacion del servidor
-        createServer()
+        //createServer()
         //Creacion del cliente
-        connectToServer()
+        //connectToServer()
 
         // Escucha los eventos de captura de pantalla
         imageReader.setOnImageAvailableListener({ reader ->
@@ -165,8 +217,8 @@ class CapturadoraPantallaService : Service() {
         Thread {
             try {
                 // Crea un socket para conectar al servidor
-                socket = Socket(serverIp, serverPort)
-                Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $serverIp:$serverPort")
+                socket = Socket(clientIp, clientPort)
+                Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $clientIp:$clientPort")
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -177,7 +229,7 @@ class CapturadoraPantallaService : Service() {
 
         Thread {
             // Crea el servidor de sockets
-            serverSocket = ServerSocket(7584)
+            serverSocket = ServerSocket(serverPort)
             Log.d("CapturadoraPantallaSe", "Servidor iniciado en el puerto 7584")
 
             while (true) {
@@ -262,7 +314,15 @@ class CapturadoraPantallaService : Service() {
         const val EXTRA_RESULT_CODE = "RESULT_CODE"
         const val EXTRA_DATA = "DATA"
         const val EXTRA_SURFACE = "SURFACE"
-        const val EXTRA_SERVER_IP = "SERVER_IP"
+        const val EXTRA_CLIENT_IP = "CLIENT_IP"
+        const val EXTRA_CLIENT_PORT = "CLIENT_PORT"
         const val EXTRA_SERVER_PORT = "SERVER_PORT"
+
+        // Constantes para el intent que verifica si es el Server.
+        const val EXTRA_IS_SERVER = "IS_SERVER"
+
+        // Constantes para el canal de notificacion
+        private const val CHANNEL_ID = "SCREEN_CAPTURE_CHANNEL"
+        private const val NOTIFICATION_ID = 1
     }
 }

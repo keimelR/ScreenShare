@@ -6,11 +6,14 @@ import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.app.Activity
+import android.os.Build
+import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.widget.Button
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
 import android.widget.EditText
+
 
 
 
@@ -22,6 +25,7 @@ class firstActivity : AppCompatActivity() {
     private lateinit var clientPort: EditText
     private lateinit var serverPort: EditText
     private lateinit var serverButton: Button
+    private lateinit var clientButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,33 +45,60 @@ class firstActivity : AppCompatActivity() {
         // Boton que inicia la transmision
         serverButton = findViewById(R.id.serverButton)
 
-        // Escuchar el clic del botón
+
+        // Escuchar el clic del botón de creacion del servidor y transmision
         serverButton.setOnClickListener {
-            val intent = Intent(this, CapturadoraPantallaService::class.java)
-            mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+            val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
+                putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, true)
+                mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+            }
         }
+
+        // Escuchar el clic del botón de creacion del servidor y transmision
+        clientButton = findViewById(R.id.clientButton)
+
+        clientButton.setOnClickListener {
+            // Iniciar el servicio de captura de pantalla en modo cliente
+            val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
+                // Notificar al servicio que se debe iniciar en modo cliente
+                putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, false)
+
+                // Enviar los datos necesarios del puerto del servidor y la dirección IP del cliente
+                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_IP, clientIp.text.toString())
+                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_PORT, clientPort.text.toString().toInt())
+            }
+
+            // Verificar la versión de Android para iniciar el servicio en el modo correcto
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE && resultCode == Activity.RESULT_OK) {
-            val intent = Intent(this, CapturadoraPantallaService::class.java)
-            // Agregar los datos necesarios al Intent
-            intent.putExtra(CapturadoraPantallaService.EXTRA_RESULT_CODE, resultCode)
-            intent.putExtra(CapturadoraPantallaService.EXTRA_DATA, data)
+            val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
+                // Agregar los datos necesarios al Intent
+                putExtra(CapturadoraPantallaService.EXTRA_RESULT_CODE, resultCode)
+                putExtra(CapturadoraPantallaService.EXTRA_DATA, data)
 
-            // Agregar el SurfaceView al Intent
-            intent.putExtra(CapturadoraPantallaService.EXTRA_SURFACE, surfaceView.holder.surface)
+                // Agregar el SurfaceView al Intent
+                putExtra(CapturadoraPantallaService.EXTRA_SURFACE, surfaceView.holder.surface)
 
-            // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
-            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_IP, "localhost")
-            intent.putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, 7584)  // Cambia esto al puerto del servidor
+                // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
+                putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, serverPort.text.toString().toInt())
 
-            // Deshabilitar el botón del servidor
+                // Indica al servicio que se debe iniciar en modo servidor
+                putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, true)
+            }
             serverButton.isEnabled = false
 
-            // Iniciar el servicio de captura de pantalla
+            // Iniciar el servicio de captura de pantalla en modo servidor
             startService(intent)
         }
     }
@@ -75,66 +106,4 @@ class firstActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_CODE_SCREEN_CAPTURE = 1001
     }
-
-    /*      CODIGO FUNCIONAL 100%
-    private lateinit var mediaProjectionManager: MediaProjectionManager
-    private val REQUEST_CODE_CAPTURE_PERM = 1
-    private val REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 2
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_first)
-
-            // Solicitar permisos de almacenamiento si no están concedidos
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE_WRITE_EXTERNAL_STORAGE)
-                } else {
-                    startMediaProjection()
-                }
-            } else {
-                startMediaProjection()
-            }
-        }
-
-        private fun startMediaProjection() {
-            mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            val intent = mediaProjectionManager.createScreenCaptureIntent()
-            startActivityForResult(intent, REQUEST_CODE_CAPTURE_PERM)
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            if (requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE) {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startMediaProjection()
-                } else {
-                    Toast.makeText(this, "Permiso de almacenamiento denegado", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_CAPTURE_PERM && resultCode == Activity.RESULT_OK) {
-            val serviceIntent = Intent(this, CapturadoraPantallaService::class.java).apply {
-                putExtra("result_code", resultCode)
-                putExtra("data", data)
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val serviceChannel = NotificationChannel(
-                    "SCREEN_CAPTURE_CHANNEL",
-                    "Screen Capture Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-                )
-                val manager = getSystemService(NotificationManager::class.java)
-                manager.createNotificationChannel(serviceChannel)
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
-            }
-        }
-    }
-    */
 }
