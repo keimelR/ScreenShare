@@ -25,6 +25,7 @@ import java.io.DataOutputStream
 import java.net.ServerSocket
 import java.net.Socket
 import android.util.Log
+import com.example.app_sistemas_operativos.R
 import java.io.DataInputStream
 
 class CapturadoraPantallaService : Service() {
@@ -52,8 +53,10 @@ class CapturadoraPantallaService : Service() {
         super.onCreate()
         // Inicializa el MediaProjectionManager
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        // Inicia el servicio en segundo plano
         startForegroundService()
     }
+
     /*
     *   onStartCommand().
     *
@@ -61,6 +64,7 @@ class CapturadoraPantallaService : Service() {
     *   Utiliza el intent con los datos enviados en onActivityResult para iniciar la captura de pantalla.
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Verifica si el intent es nulo
         if (intent == null) {
             return START_NOT_STICKY
         }
@@ -97,6 +101,7 @@ class CapturadoraPantallaService : Service() {
             if (clientIp != null && clientPort != 0) {
                 Thread {
                     connectToServer()
+                    clientHandler(socket)
                 }.start()
             }
         }
@@ -117,6 +122,7 @@ class CapturadoraPantallaService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Captura de Pantalla")
             .setContentText("Capturando pantalla...")
+            .setSmallIcon(R.mipmap.share_screen_logo)
             .setPriority(NotificationCompat.PRIORITY_LOW) // Prioridad de la notificación
             .build()
 
@@ -169,11 +175,6 @@ class CapturadoraPantallaService : Service() {
             imageReader.surface, null, null
         )
 
-        // Creacion del servidor
-        //createServer()
-        //Creacion del cliente
-        //connectToServer()
-
         // Escucha los eventos de captura de pantalla
         imageReader.setOnImageAvailableListener({ reader ->
             // Captura la imagen capturada
@@ -193,13 +194,6 @@ class CapturadoraPantallaService : Service() {
                 // Envia el bitmap al servidor
                 sendBitmapToServer(bitmap)
 
-
-                //  Muestra el bitmap en el SurfaceView de mi activity. Fue usado para ejemplo, pero no es necesario
-                val outputSurface = surface.lockCanvas(null)
-                outputSurface.drawBitmap(bitmap, 0f, 0f, null)
-                surface.unlockCanvasAndPost(outputSurface)
-
-
                 // Cierra la imagen capturada
                 image.close()
             }
@@ -213,16 +207,13 @@ class CapturadoraPantallaService : Service() {
     *   Conecta al servidor utilizando el socket.
     */
     private fun connectToServer() {
-        // Hilo para conectar al servidor
-        Thread {
-            try {
-                // Crea un socket para conectar al servidor
-                socket = Socket(clientIp, clientPort)
-                Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $clientIp:$clientPort")
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start()
+        try {
+            // Crea un socket para conectar al servidor
+            socket = Socket(clientIp, clientPort)
+            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $clientIp:$clientPort")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createServer(){
@@ -237,11 +228,11 @@ class CapturadoraPantallaService : Service() {
                 clients.add(clientSocket)
                 Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
 
+                // Cuando se agrega un cliente, comienza la ejecucion del hilo para manejar la comunicacion con el cliente
                 Thread {
                     clientHandler(clientSocket)
                 }.start()
             }
-
         }.start()
     }
 
@@ -250,15 +241,23 @@ class CapturadoraPantallaService : Service() {
             // Lógica para manejar la comunicación con el cliente
             val inputStream = clientSocket.getInputStream()
             val dataInputStream = DataInputStream(inputStream)
+            Log.d("Client", "Received byte array size: ${dataInputStream.available()}")
+
 
             while (true) {
                 val byteArraySize = dataInputStream.readInt()
+                Log.d("Client", "Received byte array size: $byteArraySize")
+
                 val byteArray = ByteArray(byteArraySize)
                 dataInputStream.readFully(byteArray)
 
                 // Convertir el byteArray en un Bitmap y mostrarlo en la interfaz de usuario
                 val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+
                 // Aquí puedes hacer lo que necesites con el bitmap recibido, como mostrarlo en un ImageView
+                val outputSurface = surface.lockCanvas(null)
+                outputSurface.drawBitmap(bitmap, 0f, 0f, null)
+                surface.unlockCanvasAndPost(outputSurface)
 
                 // Realizar cualquier otra lógica requerida con el bitmap recibido
             }

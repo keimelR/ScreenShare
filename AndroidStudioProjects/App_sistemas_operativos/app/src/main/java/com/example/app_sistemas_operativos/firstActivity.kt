@@ -76,7 +76,6 @@ class firstActivity : AppCompatActivity() {
                 startService(intent)
             }
         }
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
