@@ -1,6 +1,5 @@
 package com.example.app_sistemas_operativos.service
 
-
 import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -16,8 +15,10 @@ import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
+import android.text.format.Formatter
 import android.view.Surface
 import androidx.core.app.NotificationCompat
 import java.io.ByteArrayOutputStream
@@ -27,6 +28,42 @@ import java.net.Socket
 import android.util.Log
 import com.example.app_sistemas_operativos.R
 import java.io.DataInputStream
+
+
+/* ERROR EN MI TELEFONO
+
+java.net.ConnectException: failed to connect to localhost/127.0.0.1 (port 8888) from /:: (port 52278): connect failed: ECONNREFUSED (Connection refused)
+2024-07-06 06:31:23.479 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connect(IoBridge.java:187)
+2024-07-06 06:31:23.480 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.PlainSocketImpl.socketConnect(PlainSocketImpl.java:142)
+2024-07-06 06:31:23.480 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:390)
+2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:230)
+2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:212)
+2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:436)
+2024-07-06 06:31:23.482 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.connect(Socket.java:646)
+2024-07-06 06:31:23.482 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.connect(Socket.java:595)
+2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.<init>(Socket.java:475)
+2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.<init>(Socket.java:243)
+2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.connectToServer(CapturadoraPantallaService.kt:266)
+2024-07-06 06:31:23.484 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.onStartCommand$lambda$0(CapturadoraPantallaService.kt:143)
+2024-07-06 06:31:23.484 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.$r8$lambda$X5xrv21thyOEBUPc9e5TNp80-ok(Unknown Source:0)
+2024-07-06 06:31:23.485 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2024-07-06 06:31:23.486 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.lang.Thread.run(Thread.java:1012)
+2024-07-06 06:31:23.490 10555-10722 System.err              com.example.app_sistemas_operativos  W  Caused by: android.system.ErrnoException: connect failed: ECONNREFUSED (Connection refused)
+2024-07-06 06:31:23.493 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.Linux.connect(Native Method)
+2024-07-06 06:31:23.493 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.ForwardingOs.connect(ForwardingOs.java:201)
+2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.BlockGuardOs.connect(BlockGuardOs.java:158)
+2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.ForwardingOs.connect(ForwardingOs.java:201)
+2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connectErrno(IoBridge.java:201)
+2024-07-06 06:31:23.495 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connect(IoBridge.java:179)
+2024-07-06 06:31:23.495 10555-10722 System.err              com.example.app_sistemas_operativos  W  	... 14 more
+2024-07-06 06:31:23.517 10555-10722 AndroidRuntime          com.example.app_sistemas_operativos  E  FATAL EXCEPTION: Thread-3 (Ask Gemini)
+                                                                                                    Process: com.example.app_sistemas_operativos, PID: 10555
+                                                                                                    kotlin.UninitializedPropertyAccessException: lateinit property socket has not been initialized
+                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.onStartCommand$lambda$0(CapturadoraPantallaService.kt:144)
+                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.$r8$lambda$X5xrv21thyOEBUPc9e5TNp80-ok(Unknown Source:0)
+                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+ */
+
 
 class CapturadoraPantallaService : Service() {
     // Variables para la captura de pantalla
@@ -53,8 +90,6 @@ class CapturadoraPantallaService : Service() {
         super.onCreate()
         // Inicializa el MediaProjectionManager
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        // Inicia el servicio en segundo plano
-        startForegroundService()
     }
 
     /*
@@ -70,6 +105,9 @@ class CapturadoraPantallaService : Service() {
         }
         // Verifica si es el servidor
         val isServer = intent.getBooleanExtra(EXTRA_IS_SERVER, false)
+
+        // Inicia el servicio en segundo plano
+        startForegroundService(isServer)
 
         // Verifica en que modo se debe ejecutar el servicio
         if (isServer) {
@@ -115,13 +153,27 @@ class CapturadoraPantallaService : Service() {
     *   Ejecuta una notificacion al servicio para que el usuario sepa que el servicio esta corriendo.
     *   Ademas, es un requisito para que el servicio se ejecute en segundo plano.
     */
-    private fun startForegroundService() {
+    private fun startForegroundService(isServer: Boolean) {
         createNotificationChannel() // Crear el canal de notificación si es necesario
+
+        // Asigna el título de la notificacion según el modo
+        val tittleNotification = if (isServer) {
+            "El servidor se esta ejecutando."
+        } else {
+            "El cliente se esta ejecutando."
+        }
+
+        // Asigna el texto de la notificacion según el modo
+        val textNotification = if (isServer) {
+            "Transmitiendo pantalla."
+        } else {
+            "Recibiendo pantalla."
+        }
 
         // Crea una notificacion para el servicio
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Captura de Pantalla")
-            .setContentText("Capturando pantalla...")
+            .setContentTitle(tittleNotification)
+            .setContentText(textNotification)
             .setSmallIcon(R.mipmap.share_screen_logo)
             .setPriority(NotificationCompat.PRIORITY_LOW) // Prioridad de la notificación
             .build()
@@ -208,20 +260,25 @@ class CapturadoraPantallaService : Service() {
     */
     private fun connectToServer() {
         try {
+            Log.d("CapturadoraPantallaSe", "Intentando conectar al servidor en $clientIp:$clientPort")
+            Log.d("CapturadoraPantallaSe", "El puerto del servidor es: $serverPort")
+
             // Crea un socket para conectar al servidor
             socket = Socket(clientIp, clientPort)
-            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en $clientIp:$clientPort")
+            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en IP_DEL_SERVIDOR:$clientPort")
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     private fun createServer(){
-
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val ipAddress = Formatter.formatIpAddress(wifiManager.connectionInfo.ipAddress)
+        Log.d("CapturadoraPantallaSe", "IP del servidor: $ipAddress")
         Thread {
             // Crea el servidor de sockets
             serverSocket = ServerSocket(serverPort)
-            Log.d("CapturadoraPantallaSe", "Servidor iniciado en el puerto 7584")
+            Log.d("CapturadoraPantallaSe", "Servidor iniciado en el puerto $serverPort")
 
             while (true) {
                 val clientSocket = serverSocket.accept()
@@ -241,12 +298,9 @@ class CapturadoraPantallaService : Service() {
             // Lógica para manejar la comunicación con el cliente
             val inputStream = clientSocket.getInputStream()
             val dataInputStream = DataInputStream(inputStream)
-            Log.d("Client", "Received byte array size: ${dataInputStream.available()}")
-
 
             while (true) {
                 val byteArraySize = dataInputStream.readInt()
-                Log.d("Client", "Received byte array size: $byteArraySize")
 
                 val byteArray = ByteArray(byteArraySize)
                 dataInputStream.readFully(byteArray)
@@ -305,7 +359,7 @@ class CapturadoraPantallaService : Service() {
         // Crea un flujo de salida en memoria para el bitmap
         val stream = ByteArrayOutputStream()
         // Comprime el bitmap en el flujo de salida
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
         return stream.toByteArray()
     }
 

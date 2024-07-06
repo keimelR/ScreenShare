@@ -10,17 +10,16 @@ import android.os.Build
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.TextureView
 import android.widget.Button
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
 import android.widget.EditText
-
-
+import androidx.compose.material3.Surface
 
 
 class firstActivity : AppCompatActivity() {
     private lateinit var mediaProjectionManager: MediaProjectionManager
-    private lateinit var surfaceView: SurfaceView
-    private lateinit var surfaceHolder: SurfaceHolder
+    private lateinit var textureView: TextureView
     private lateinit var clientIp: EditText
     private lateinit var clientPort: EditText
     private lateinit var serverPort: EditText
@@ -31,7 +30,7 @@ class firstActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_first)
 
-        surfaceView = findViewById(R.id.surfaceView)
+        textureView = findViewById(R.id.textureView)
 
         //Puerto del servidor ingresado por el dispositivo que inicia la transmision
         serverPort = findViewById(R.id.serverPortEditText)
@@ -40,7 +39,6 @@ class firstActivity : AppCompatActivity() {
         clientIp = findViewById(R.id.clientIpEditText)
         //Puerto del servidor ingresado por el dispositivo que ve la transmision
         clientPort = findViewById(R.id.clientPortEditText)
-        surfaceHolder = surfaceView.holder
 
         // Boton que inicia la transmision
         serverButton = findViewById(R.id.serverButton)
@@ -87,7 +85,9 @@ class firstActivity : AppCompatActivity() {
                 putExtra(CapturadoraPantallaService.EXTRA_DATA, data)
 
                 // Agregar el SurfaceView al Intent
-                putExtra(CapturadoraPantallaService.EXTRA_SURFACE, surfaceView.holder.surface)
+                putExtra(CapturadoraPantallaService.EXTRA_SURFACE,
+                    android.view.Surface(textureView.surfaceTexture)
+                )
 
                 // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
                 putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, serverPort.text.toString().toInt())

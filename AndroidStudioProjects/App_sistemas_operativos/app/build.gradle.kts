@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation("com.github.pedroSG94.RootEncoder:library:2.4.5")
     implementation("com.google.dagger:hilt-android:2.44")
+    implementation(libs.androidx.material3.android)
     kapt("com.google.dagger:hilt-android-compiler:2.44")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
