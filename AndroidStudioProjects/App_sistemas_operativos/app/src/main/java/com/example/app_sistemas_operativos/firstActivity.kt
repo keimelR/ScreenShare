@@ -62,6 +62,11 @@ class firstActivity : AppCompatActivity() {
                 // Notificar al servicio que se debe iniciar en modo cliente
                 putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, false)
 
+                // Agregar el SurfaceView al Intent
+                putExtra(CapturadoraPantallaService.EXTRA_SURFACE,
+                    android.view.Surface(textureView.surfaceTexture)
+                )
+
                 // Enviar los datos necesarios del puerto del servidor y la dirección IP del cliente
                 putExtra(CapturadoraPantallaService.EXTRA_CLIENT_IP, clientIp.text.toString())
                 putExtra(CapturadoraPantallaService.EXTRA_CLIENT_PORT, clientPort.text.toString().toInt())
@@ -83,11 +88,6 @@ class firstActivity : AppCompatActivity() {
                 // Agregar los datos necesarios al Intent
                 putExtra(CapturadoraPantallaService.EXTRA_RESULT_CODE, resultCode)
                 putExtra(CapturadoraPantallaService.EXTRA_DATA, data)
-
-                // Agregar el SurfaceView al Intent
-                putExtra(CapturadoraPantallaService.EXTRA_SURFACE,
-                    android.view.Surface(textureView.surfaceTexture)
-                )
 
                 // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
                 putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, serverPort.text.toString().toInt())

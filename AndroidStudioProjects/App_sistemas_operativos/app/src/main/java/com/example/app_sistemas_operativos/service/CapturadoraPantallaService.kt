@@ -9,7 +9,9 @@ import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Paint
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
@@ -28,40 +30,14 @@ import java.net.Socket
 import android.util.Log
 import com.example.app_sistemas_operativos.R
 import java.io.DataInputStream
+import java.io.EOFException
+import java.io.IOException
+import java.net.InetAddress
+import java.util.concurrent.CopyOnWriteArrayList
 
 
-/* ERROR EN MI TELEFONO
-
-java.net.ConnectException: failed to connect to localhost/127.0.0.1 (port 8888) from /:: (port 52278): connect failed: ECONNREFUSED (Connection refused)
-2024-07-06 06:31:23.479 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connect(IoBridge.java:187)
-2024-07-06 06:31:23.480 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.PlainSocketImpl.socketConnect(PlainSocketImpl.java:142)
-2024-07-06 06:31:23.480 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:390)
-2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:230)
-2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:212)
-2024-07-06 06:31:23.481 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:436)
-2024-07-06 06:31:23.482 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.connect(Socket.java:646)
-2024-07-06 06:31:23.482 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.connect(Socket.java:595)
-2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.<init>(Socket.java:475)
-2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.net.Socket.<init>(Socket.java:243)
-2024-07-06 06:31:23.483 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.connectToServer(CapturadoraPantallaService.kt:266)
-2024-07-06 06:31:23.484 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.onStartCommand$lambda$0(CapturadoraPantallaService.kt:143)
-2024-07-06 06:31:23.484 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.$r8$lambda$X5xrv21thyOEBUPc9e5TNp80-ok(Unknown Source:0)
-2024-07-06 06:31:23.485 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
-2024-07-06 06:31:23.486 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at java.lang.Thread.run(Thread.java:1012)
-2024-07-06 06:31:23.490 10555-10722 System.err              com.example.app_sistemas_operativos  W  Caused by: android.system.ErrnoException: connect failed: ECONNREFUSED (Connection refused)
-2024-07-06 06:31:23.493 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.Linux.connect(Native Method)
-2024-07-06 06:31:23.493 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.ForwardingOs.connect(ForwardingOs.java:201)
-2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.BlockGuardOs.connect(BlockGuardOs.java:158)
-2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.ForwardingOs.connect(ForwardingOs.java:201)
-2024-07-06 06:31:23.494 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connectErrno(IoBridge.java:201)
-2024-07-06 06:31:23.495 10555-10722 System.err              com.example.app_sistemas_operativos  W  	at libcore.io.IoBridge.connect(IoBridge.java:179)
-2024-07-06 06:31:23.495 10555-10722 System.err              com.example.app_sistemas_operativos  W  	... 14 more
-2024-07-06 06:31:23.517 10555-10722 AndroidRuntime          com.example.app_sistemas_operativos  E  FATAL EXCEPTION: Thread-3 (Ask Gemini)
-                                                                                                    Process: com.example.app_sistemas_operativos, PID: 10555
-                                                                                                    kotlin.UninitializedPropertyAccessException: lateinit property socket has not been initialized
-                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.onStartCommand$lambda$0(CapturadoraPantallaService.kt:144)
-                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService.$r8$lambda$X5xrv21thyOEBUPc9e5TNp80-ok(Unknown Source:0)
-                                                                                                    	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+/*
+     Intentando conectar al servidor en 192.168.1.9:8888                                                                                               	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
  */
 
 
@@ -79,7 +55,7 @@ class CapturadoraPantallaService : Service() {
     private var clientPort: Int = 0
     private var serverPort: Int = 0
     private lateinit var serverSocket: ServerSocket
-    private val clients = mutableListOf<Socket>()
+    private val clients = CopyOnWriteArrayList<Socket>() // Usar CopyOnWriteArrayList para manejar concurrencia
 
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -115,7 +91,7 @@ class CapturadoraPantallaService : Service() {
 
             val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_OK)
             val data = intent.getParcelableExtra<Intent>(EXTRA_DATA) ?: return START_NOT_STICKY
-            surface = intent.getParcelableExtra(EXTRA_SURFACE) ?: return START_NOT_STICKY
+
 
             // Obtiene el puerto del servidor
             serverPort = intent.getIntExtra(EXTRA_SERVER_PORT, 0)
@@ -134,12 +110,13 @@ class CapturadoraPantallaService : Service() {
             // Obtiene los datos del cliente
             clientIp = intent.getStringExtra(EXTRA_CLIENT_IP)
             clientPort = intent.getIntExtra(EXTRA_CLIENT_PORT, 0)
+            surface = intent.getParcelableExtra(EXTRA_SURFACE) ?: return START_NOT_STICKY
 
             // Conecta al servidor si los datos son validos
             if (clientIp != null && clientPort != 0) {
                 Thread {
                     connectToServer()
-                    clientHandler(socket)
+
                 }.start()
             }
         }
@@ -174,7 +151,7 @@ class CapturadoraPantallaService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(tittleNotification)
             .setContentText(textNotification)
-            .setSmallIcon(R.mipmap.share_screen_logo)
+            // .setSmallIcon(R.mipmap.share_screen_logo)
             .setPriority(NotificationCompat.PRIORITY_LOW) // Prioridad de la notificación
             .build()
 
@@ -260,12 +237,18 @@ class CapturadoraPantallaService : Service() {
     */
     private fun connectToServer() {
         try {
-            Log.d("CapturadoraPantallaSe", "Intentando conectar al servidor en $clientIp:$clientPort")
-            Log.d("CapturadoraPantallaSe", "El puerto del servidor es: $serverPort")
+            Log.d("CapturadoraPantallaSe", "Intentando conectar un cliente al servidor en $clientIp:$clientPort")
+            //Log.d("CapturadoraPantallaSe", "El puerto del servidor es: $serverPort")
 
             // Crea un socket para conectar al servidor
             socket = Socket(clientIp, clientPort)
-            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en IP_DEL_SERVIDOR:$clientPort")
+            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en ${socket.inetAddress}:${socket.port}")
+
+            clientHandler(socket)
+        } catch (e: java.net.ConnectException) {
+            // Excepción lanzada cuando no se puede establecer la conexión con el servidor
+            Log.e("CapturadoraPantallaSe", "No se pudo conectar al servidor: ${e.message}")
+
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -278,7 +261,9 @@ class CapturadoraPantallaService : Service() {
         Thread {
             // Crea el servidor de sockets
             serverSocket = ServerSocket(serverPort)
-            Log.d("CapturadoraPantallaSe", "Servidor iniciado en el puerto $serverPort")
+            val serverAddress: InetAddress = serverSocket.inetAddress
+            val serverHostAddress: String = serverAddress.hostAddress
+            Log.d("CapturadoraPantallaSe", "Servidor iniciado en la dirección $serverHostAddress y en el puerto ${serverSocket.localPort}")
 
             while (true) {
                 val clientSocket = serverSocket.accept()
@@ -294,34 +279,62 @@ class CapturadoraPantallaService : Service() {
     }
 
     private fun clientHandler(clientSocket: Socket) {
+        val MAX_DATA_SIZE = 1024 * 1024 * 10 // 10 MB, ajustar según sea necesario
+
         try {
-            // Lógica para manejar la comunicación con el cliente
             val inputStream = clientSocket.getInputStream()
             val dataInputStream = DataInputStream(inputStream)
 
             while (true) {
-                val byteArraySize = dataInputStream.readInt()
+                try {
+                    Log.d("Client", "Waiting to read data size")
+                    Thread.sleep(100)  // Añade un pequeño retraso antes de leer los datos
 
-                val byteArray = ByteArray(byteArraySize)
-                dataInputStream.readFully(byteArray)
+                    val byteArraySize = dataInputStream.readInt()
+                    Log.d("Client", "Data size received: $byteArraySize")
 
-                // Convertir el byteArray en un Bitmap y mostrarlo en la interfaz de usuario
-                val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                    if (byteArraySize <= 0 || byteArraySize > MAX_DATA_SIZE) {
+                        Log.e("Client", "Invalid data size received: $byteArraySize")
+                        continue // Ignora este paquete y espera el siguiente
+                    }
 
-                // Aquí puedes hacer lo que necesites con el bitmap recibido, como mostrarlo en un ImageView
-                val outputSurface = surface.lockCanvas(null)
-                outputSurface.drawBitmap(bitmap, 0f, 0f, null)
-                surface.unlockCanvasAndPost(outputSurface)
+                    val byteArray = ByteArray(byteArraySize)
+                    dataInputStream.readFully(byteArray)
+                    Log.d("Client", "Data received, converting to Bitmap")
 
-                // Realizar cualquier otra lógica requerida con el bitmap recibido
+                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                    if (bitmap == null) {
+                        Log.e("Client", "Failed to decode bitmap from received data")
+                        continue // Ignora este paquete si la decodificación falla
+                    }
+
+                    // Ajusta el tamaño del bitmap al tamaño de la superficie del cliente
+                    val outputSurface = surface.lockCanvas(null)
+                    val destRect = Rect(0, 0, outputSurface.width, outputSurface.height)
+                    val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
+                    val paint = Paint()
+                    outputSurface.drawBitmap(bitmap, srcRect, destRect, paint)
+                    surface.unlockCanvasAndPost(outputSurface)
+                    Log.d("Client", "Bitmap displayed")
+                } catch (e: EOFException) {
+                    Log.e("Client", "Connection closed: ${e.message}")
+                    break // Salir del bucle si se cierra la conexión
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Log.e("Client", "Error in client handler: ${e.message}")
+                    break // Salir del bucle en caso de error
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         } finally {
-            // Cerrar el socket cuando finalice la comunicación con el cliente
-            clientSocket.close()
+            try {
+                clientSocket.close()
+                Log.d("Client", "Socket closed")
+            } catch (e: IOException) {
+                Log.e("Client", "Error closing socket: ${e.message}")
+            }
         }
     }
+
 
     /*
     *   sendBitmapToServer().
@@ -330,25 +343,42 @@ class CapturadoraPantallaService : Service() {
     *   Envia el arreglo de bytes al servidor.
     */
     private fun sendBitmapToServer(bitmap: Bitmap) {
-        // Convierte el bitmap a un arreglo de bytes
         val byteArray = bitmapToByteArray(bitmap)
-
-        // Hilo para enviar el arreglo de bytes a todos los clientes
         Thread {
             try {
-                // Recorre la lista de clientes y envía el arreglo de bytes a cada uno
-                for (clientSocket in clients) {
-                    val outputStream = clientSocket.getOutputStream()
-                    val dataOutputStream = DataOutputStream(outputStream)
-                    dataOutputStream.writeInt(byteArray.size)
-                    dataOutputStream.write(byteArray)
-                    dataOutputStream.flush()
+                val iterator = clients.iterator()
+                while (iterator.hasNext()) {
+                    val clientSocket = iterator.next()
+                    try {
+                        if (!clientSocket.isClosed) {
+                            val outputStream = clientSocket.getOutputStream()
+                            val dataOutputStream = DataOutputStream(outputStream)
+                            Log.d("Server", "Sending data of size: ${byteArray.size}")
+
+                            synchronized(dataOutputStream) {
+                                dataOutputStream.writeInt(byteArray.size)
+                                dataOutputStream.write(byteArray)
+                                dataOutputStream.flush()
+                                Log.d("Server", "Data sent")
+                                Thread.sleep(100)  // Añade un pequeño retraso antes de leer los datos
+                            }
+                        } else {
+                            Log.e("Server", "Socket is closed, removing from clients list")
+                            iterator.remove()
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        Log.e("Server", "Error sending data to client: ${e.message}")
+                        iterator.remove() // Remove client if there's an error
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                Log.e("Server", "Error sending data to clients: ${e.message}")
             }
         }.start()
     }
+
 
     /*
     *   bitmapToByteArray().
@@ -360,6 +390,7 @@ class CapturadoraPantallaService : Service() {
         val stream = ByteArrayOutputStream()
         // Comprime el bitmap en el flujo de salida
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        bitmap.recycle()
         return stream.toByteArray()
     }
 
