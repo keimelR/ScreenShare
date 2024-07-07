@@ -28,7 +28,6 @@ import java.io.DataOutputStream
 import java.net.ServerSocket
 import java.net.Socket
 import android.util.Log
-import com.example.app_sistemas_operativos.R
 import java.io.DataInputStream
 import java.io.EOFException
 import java.io.IOException
@@ -37,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 
 /*
-     Intentando conectar al servidor en 192.168.1.9:8888                                                                                               	at com.example.app_sistemas_operativos.service.CapturadoraPantallaService$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+     Intentando conectar al servidor en 192.168.1.9:8888
  */
 
 
@@ -56,7 +55,6 @@ class CapturadoraPantallaService : Service() {
     private var serverPort: Int = 0
     private lateinit var serverSocket: ServerSocket
     private val clients = CopyOnWriteArrayList<Socket>() // Usar CopyOnWriteArrayList para manejar concurrencia
-
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -288,7 +286,6 @@ class CapturadoraPantallaService : Service() {
             while (true) {
                 try {
                     Log.d("Client", "Waiting to read data size")
-                    Thread.sleep(100)  // Añade un pequeño retraso antes de leer los datos
 
                     val byteArraySize = dataInputStream.readInt()
                     Log.d("Client", "Data size received: $byteArraySize")
@@ -345,7 +342,7 @@ class CapturadoraPantallaService : Service() {
     private fun sendBitmapToServer(bitmap: Bitmap) {
         val byteArray = bitmapToByteArray(bitmap)
         Thread {
-            try {
+            synchronized(clients) {
                 val iterator = clients.iterator()
                 while (iterator.hasNext()) {
                     val clientSocket = iterator.next()
@@ -360,7 +357,6 @@ class CapturadoraPantallaService : Service() {
                                 dataOutputStream.write(byteArray)
                                 dataOutputStream.flush()
                                 Log.d("Server", "Data sent")
-                                Thread.sleep(100)  // Añade un pequeño retraso antes de leer los datos
                             }
                         } else {
                             Log.e("Server", "Socket is closed, removing from clients list")
@@ -372,12 +368,10 @@ class CapturadoraPantallaService : Service() {
                         iterator.remove() // Remove client if there's an error
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("Server", "Error sending data to clients: ${e.message}")
             }
         }.start()
     }
+
 
 
     /*
@@ -389,7 +383,7 @@ class CapturadoraPantallaService : Service() {
         // Crea un flujo de salida en memoria para el bitmap
         val stream = ByteArrayOutputStream()
         // Comprime el bitmap en el flujo de salida
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream)
         bitmap.recycle()
         return stream.toByteArray()
     }
