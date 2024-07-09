@@ -54,7 +54,7 @@ class CapturadoraPantallaService : Service() {
     private var clientPort: Int = 0
     private var serverPort: Int = 0
     private lateinit var serverSocket: ServerSocket
-    private val clients = CopyOnWriteArrayList<Socket>() // Usar CopyOnWriteArrayList para manejar concurrencia
+    private val clients = CopyOnWriteArrayList<Socket>()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -264,6 +264,7 @@ class CapturadoraPantallaService : Service() {
             Log.d("CapturadoraPantallaSe", "Servidor iniciado en la dirección $serverHostAddress y en el puerto ${serverSocket.localPort}")
 
             while (true) {
+                // Acepta una conexion
                 val clientSocket = serverSocket.accept()
                 clients.add(clientSocket)
                 Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
@@ -277,9 +278,11 @@ class CapturadoraPantallaService : Service() {
     }
 
     private fun clientHandler(clientSocket: Socket) {
-        val MAX_DATA_SIZE = 1024 * 1024 * 10 // 10 MB, ajustar según sea necesario
+        // Tamaño maximo del paquete
+        val MAX_DATA_SIZE = 1024 * 1024 * 10 // 10 MB
 
         try {
+            // Obtiene los streams de entrada y salida del socket
             val inputStream = clientSocket.getInputStream()
             val dataInputStream = DataInputStream(inputStream)
 
@@ -287,18 +290,22 @@ class CapturadoraPantallaService : Service() {
                 try {
                     Log.d("Client", "Waiting to read data size")
 
+                    // Recibe el tamaño del paquete
                     val byteArraySize = dataInputStream.readInt()
                     Log.d("Client", "Data size received: $byteArraySize")
 
+                    // Verifica el tamaño del paquete
                     if (byteArraySize <= 0 || byteArraySize > MAX_DATA_SIZE) {
                         Log.e("Client", "Invalid data size received: $byteArraySize")
                         continue // Ignora este paquete y espera el siguiente
                     }
 
+                    // Recibe el paquete
                     val byteArray = ByteArray(byteArraySize)
                     dataInputStream.readFully(byteArray)
                     Log.d("Client", "Data received, converting to Bitmap")
 
+                    // Convierte el arreglo de bytes en un bitmap
                     val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
                     if (bitmap == null) {
                         Log.e("Client", "Failed to decode bitmap from received data")
@@ -310,6 +317,7 @@ class CapturadoraPantallaService : Service() {
                     val destRect = Rect(0, 0, outputSurface.width, outputSurface.height)
                     val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
                     val paint = Paint()
+                    // Dibuja el bitmap en la superficie del cliente
                     outputSurface.drawBitmap(bitmap, srcRect, destRect, paint)
                     surface.unlockCanvasAndPost(outputSurface)
                     Log.d("Client", "Bitmap displayed")
@@ -340,29 +348,38 @@ class CapturadoraPantallaService : Service() {
     *   Envia el arreglo de bytes al servidor.
     */
     private fun sendBitmapToServer(bitmap: Bitmap) {
+        // Comprime el bitmap en un arreglo de bytes
         val byteArray = bitmapToByteArray(bitmap)
         Thread {
             synchronized(clients) {
+                // Obtiene la lista de clientes conectados
                 val iterator = clients.iterator()
+                // Itera sobre la lista de clientes y envia el arreglo de bytes al cliente
                 while (iterator.hasNext()) {
                     val clientSocket = iterator.next()
                     try {
+                        // Verifica si el socket esta abierto
                         if (!clientSocket.isClosed) {
+                            // Envia el arreglo de bytes al cliente
                             val outputStream = clientSocket.getOutputStream()
                             val dataOutputStream = DataOutputStream(outputStream)
                             Log.d("Server", "Sending data of size: ${byteArray.size}")
 
                             synchronized(dataOutputStream) {
+                                // Envia el tamaño del arreglo de bytes
                                 dataOutputStream.writeInt(byteArray.size)
+                                // Envia el arreglo de bytes
                                 dataOutputStream.write(byteArray)
                                 dataOutputStream.flush()
                                 Log.d("Server", "Data sent")
                             }
                         } else {
+                            // Si el socket esta cerrado, lo elimina de la lista
                             Log.e("Server", "Socket is closed, removing from clients list")
                             iterator.remove()
                         }
                     } catch (e: IOException) {
+                        // Si hay un error al enviar el arreglo de bytes, lo elimina de la lista
                         e.printStackTrace()
                         Log.e("Server", "Error sending data to client: ${e.message}")
                         iterator.remove() // Remove client if there's an error
@@ -383,7 +400,7 @@ class CapturadoraPantallaService : Service() {
         // Crea un flujo de salida en memoria para el bitmap
         val stream = ByteArrayOutputStream()
         // Comprime el bitmap en el flujo de salida
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, stream)
         bitmap.recycle()
         return stream.toByteArray()
     }

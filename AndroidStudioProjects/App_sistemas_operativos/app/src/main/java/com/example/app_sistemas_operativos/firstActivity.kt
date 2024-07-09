@@ -24,59 +24,54 @@ class firstActivity : AppCompatActivity() {
     private lateinit var clientPort: EditText
     private lateinit var serverPort: EditText
     private lateinit var serverButton: Button
+    private lateinit var serverButtonDisconnect: Button
     private lateinit var clientButton: Button
+    private var serviceIntent: Intent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_first)
 
         textureView = findViewById(R.id.textureView)
-
-        //Puerto del servidor ingresado por el dispositivo que inicia la transmision
         serverPort = findViewById(R.id.serverPortEditText)
-
-        //Direccion ip ingresado por el dispositivo que ve la transmision
-        clientIp = findViewById(R.id.clientIpEditText)
-        //Puerto del servidor ingresado por el dispositivo que ve la transmision
-        clientPort = findViewById(R.id.clientPortEditText)
-
-        // Boton que inicia la transmision
         serverButton = findViewById(R.id.serverButton)
+        serverButtonDisconnect = findViewById(R.id.serverButtonDisconnect)
+        clientIp = findViewById(R.id.clientIpEditText)
+        clientPort = findViewById(R.id.clientPortEditText)
+        clientButton = findViewById(R.id.clientButton)
 
+        mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
-        // Escuchar el clic del botón de creacion del servidor y transmision
         serverButton.setOnClickListener {
             val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
                 putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, true)
-                mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+            }
+            startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
+        }
+
+        serverButtonDisconnect.setOnClickListener {
+            serviceIntent?.let {
+                stopService(it)
+                serverButton.isEnabled = true
             }
         }
 
-        // Escuchar el clic del botón de creacion del servidor y transmision
-        clientButton = findViewById(R.id.clientButton)
-
         clientButton.setOnClickListener {
-            // Iniciar el servicio de captura de pantalla en modo cliente
-            val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
-                // Notificar al servicio que se debe iniciar en modo cliente
+            val ip = clientIp.text.toString()
+            val port = clientPort.text.toString().toInt()
+
+            serviceIntent = Intent(this, CapturadoraPantallaService::class.java).apply {
                 putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, false)
-
-                // Agregar el SurfaceView al Intent
-                putExtra(CapturadoraPantallaService.EXTRA_SURFACE,
-                    android.view.Surface(textureView.surfaceTexture)
-                )
-
-                // Enviar los datos necesarios del puerto del servidor y la dirección IP del cliente
-                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_IP, clientIp.text.toString())
-                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_PORT, clientPort.text.toString().toInt())
+                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_IP, ip)
+                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_PORT, port)
+                putExtra(CapturadoraPantallaService.EXTRA_SURFACE, android.view.Surface(textureView.surfaceTexture))
             }
 
             // Verificar la versión de Android para iniciar el servicio en el modo correcto
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
+                startForegroundService(serviceIntent)
             } else {
-                startService(intent)
+                startService(serviceIntent)
             }
         }
     }
@@ -84,21 +79,19 @@ class firstActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE && resultCode == Activity.RESULT_OK) {
-            val intent = Intent(this, CapturadoraPantallaService::class.java).apply {
-                // Agregar los datos necesarios al Intent
+            serviceIntent = Intent(this, CapturadoraPantallaService::class.java).apply {
                 putExtra(CapturadoraPantallaService.EXTRA_RESULT_CODE, resultCode)
                 putExtra(CapturadoraPantallaService.EXTRA_DATA, data)
-
-                // Configurar el Activity para que el usuario pueda ingresar la dirección IP y puerto del servidor
                 putExtra(CapturadoraPantallaService.EXTRA_SERVER_PORT, serverPort.text.toString().toInt())
-
-                // Indica al servicio que se debe iniciar en modo servidor
                 putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, true)
             }
             serverButton.isEnabled = false
 
-            // Iniciar el servicio de captura de pantalla en modo servidor
-            startService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
         }
     }
 
