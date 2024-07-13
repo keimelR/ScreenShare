@@ -1,44 +1,29 @@
 package com.example.app_sistemas_operativos.service
 
 import android.app.Activity
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Paint
 import android.graphics.PixelFormat
-import android.graphics.Rect
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.wifi.WifiManager
-import android.os.Build
 import android.os.IBinder
 import android.text.format.Formatter
 import android.view.Surface
-import androidx.core.app.NotificationCompat
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.net.ServerSocket
 import java.net.Socket
 import android.util.Log
-import java.io.DataInputStream
-import java.io.EOFException
 import java.io.IOException
 import java.net.InetAddress
 import java.util.concurrent.CopyOnWriteArrayList
-
-
-/*
-     Intentando conectar al servidor en 192.168.1.9:8888
- */
-
 
 class CapturadoraPantallaService : Service() {
     // Variables para la captura de pantalla
@@ -90,7 +75,6 @@ class CapturadoraPantallaService : Service() {
             val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_OK)
             val data = intent.getParcelableExtra<Intent>(EXTRA_DATA) ?: return START_NOT_STICKY
 
-
             // Obtiene el puerto del servidor
             serverPort = intent.getIntExtra(EXTRA_SERVER_PORT, 0)
 
@@ -113,8 +97,7 @@ class CapturadoraPantallaService : Service() {
             // Conecta al servidor si los datos son validos
             if (clientIp != null && clientPort != 0) {
                 Thread {
-                    connectToServer()
-
+                    Client.connectToServer(clientIp!!, clientPort, surface)
                 }.start()
             }
         }
@@ -129,8 +112,6 @@ class CapturadoraPantallaService : Service() {
     *   Ademas, es un requisito para que el servicio se ejecute en segundo plano.
     */
     private fun startForegroundService(isServer: Boolean) {
-        createNotificationChannel() // Crear el canal de notificación si es necesario
-
         // Asigna el título de la notificacion según el modo
         val tittleNotification = if (isServer) {
             "El servidor se esta ejecutando."
@@ -145,37 +126,9 @@ class CapturadoraPantallaService : Service() {
             "Recibiendo pantalla."
         }
 
-        // Crea una notificacion para el servicio
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(tittleNotification)
-            .setContentText(textNotification)
-            // .setSmallIcon(R.mipmap.share_screen_logo)
-            .setPriority(NotificationCompat.PRIORITY_LOW) // Prioridad de la notificación
-            .build()
-
-        // Inicia el servicio en segundo plano
+        val notification = Notification.buildNotification(this, tittleNotification, textNotification)
         startForeground(NOTIFICATION_ID, notification)
     }
-
-    /*
-    *   createNotificationChannel().
-    *
-    *   Crea un canal de notificacion para el servicio.
-    *   Este canal es necesario para que el servicio se ejecute en segundo plano para dispositivos con
-    *   Android 8 o superior.
-     */
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                CHANNEL_ID,
-                "Screen Capture Service Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(serviceChannel)
-        }
-    }
-
 
     /*
     *   startScreenCapture().
@@ -227,31 +180,6 @@ class CapturadoraPantallaService : Service() {
         }, null)
     }
 
-
-    /*
-    *   connectToServer().
-    *
-    *   Conecta al servidor utilizando el socket.
-    */
-    private fun connectToServer() {
-        try {
-            Log.d("CapturadoraPantallaSe", "Intentando conectar un cliente al servidor en $clientIp:$clientPort")
-            //Log.d("CapturadoraPantallaSe", "El puerto del servidor es: $serverPort")
-
-            // Crea un socket para conectar al servidor
-            socket = Socket(clientIp, clientPort)
-            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en ${socket.inetAddress}:${socket.port}")
-
-            clientHandler(socket)
-        } catch (e: java.net.ConnectException) {
-            // Excepción lanzada cuando no se puede establecer la conexión con el servidor
-            Log.e("CapturadoraPantallaSe", "No se pudo conectar al servidor: ${e.message}")
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     private fun createServer(){
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val ipAddress = Formatter.formatIpAddress(wifiManager.connectionInfo.ipAddress)
@@ -271,75 +199,11 @@ class CapturadoraPantallaService : Service() {
 
                 // Cuando se agrega un cliente, comienza la ejecucion del hilo para manejar la comunicacion con el cliente
                 Thread {
-                    clientHandler(clientSocket)
+                    Client.clientHandler(clientSocket)
                 }.start()
             }
         }.start()
     }
-
-    private fun clientHandler(clientSocket: Socket) {
-        // Tamaño maximo del paquete
-        val MAX_DATA_SIZE = 1024 * 1024 * 10 // 10 MB
-
-        try {
-            // Obtiene los streams de entrada y salida del socket
-            val inputStream = clientSocket.getInputStream()
-            val dataInputStream = DataInputStream(inputStream)
-
-            while (true) {
-                try {
-                    Log.d("Client", "Waiting to read data size")
-
-                    // Recibe el tamaño del paquete
-                    val byteArraySize = dataInputStream.readInt()
-                    Log.d("Client", "Data size received: $byteArraySize")
-
-                    // Verifica el tamaño del paquete
-                    if (byteArraySize <= 0 || byteArraySize > MAX_DATA_SIZE) {
-                        Log.e("Client", "Invalid data size received: $byteArraySize")
-                        continue // Ignora este paquete y espera el siguiente
-                    }
-
-                    // Recibe el paquete
-                    val byteArray = ByteArray(byteArraySize)
-                    dataInputStream.readFully(byteArray)
-                    Log.d("Client", "Data received, converting to Bitmap")
-
-                    // Convierte el arreglo de bytes en un bitmap
-                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-                    if (bitmap == null) {
-                        Log.e("Client", "Failed to decode bitmap from received data")
-                        continue // Ignora este paquete si la decodificación falla
-                    }
-
-                    // Ajusta el tamaño del bitmap al tamaño de la superficie del cliente
-                    val outputSurface = surface.lockCanvas(null)
-                    val destRect = Rect(0, 0, outputSurface.width, outputSurface.height)
-                    val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
-                    val paint = Paint()
-                    // Dibuja el bitmap en la superficie del cliente
-                    outputSurface.drawBitmap(bitmap, srcRect, destRect, paint)
-                    surface.unlockCanvasAndPost(outputSurface)
-                    Log.d("Client", "Bitmap displayed")
-                } catch (e: EOFException) {
-                    Log.e("Client", "Connection closed: ${e.message}")
-                    break // Salir del bucle si se cierra la conexión
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    Log.e("Client", "Error in client handler: ${e.message}")
-                    break // Salir del bucle en caso de error
-                }
-            }
-        } finally {
-            try {
-                clientSocket.close()
-                Log.d("Client", "Socket closed")
-            } catch (e: IOException) {
-                Log.e("Client", "Error closing socket: ${e.message}")
-            }
-        }
-    }
-
 
     /*
     *   sendBitmapToServer().
@@ -389,8 +253,6 @@ class CapturadoraPantallaService : Service() {
         }.start()
     }
 
-
-
     /*
     *   bitmapToByteArray().
     *
@@ -417,7 +279,6 @@ class CapturadoraPantallaService : Service() {
         const val EXTRA_IS_SERVER = "IS_SERVER"
 
         // Constantes para el canal de notificacion
-        private const val CHANNEL_ID = "SCREEN_CAPTURE_CHANNEL"
         private const val NOTIFICATION_ID = 1
     }
 }
