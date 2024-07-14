@@ -11,26 +11,36 @@ import java.io.IOException
 import java.net.Socket
 
 object Client {
+    /*
+    *   connectToServer()
+    *
+    *   Se encarga de establecer la conexión con el servidor
+     */
      fun connectToServer(clientIp: String, clientPort: Int, surface: Surface) {
-        val socket: Socket
-        try {
-            Log.d("CapturadoraPantallaSe", "Intentando conectar un cliente al servidor en $clientIp:$clientPort")
-            //Log.d("CapturadoraPantallaSe", "El puerto del servidor es: $serverPort")
+         // Crea un socket para conectar al servidor
+         val socket: Socket
+         try {
+             Log.d("CapturadoraPantallaSe", "Intentando conectar un cliente al servidor en $clientIp:$clientPort")
 
-            // Crea un socket para conectar al servidor
-            socket = Socket(clientIp, clientPort)
-            Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en ${socket.inetAddress}:${socket.port}")
+             // Crea un socket para conectar al servidor
+             socket = Socket(clientIp, clientPort)
+             Log.d("CapturadoraPantallaSe", "Cliente conectado al servidor en ${socket.inetAddress}:${socket.port}")
 
-            clientHandler(socket, surface)
-        } catch (e: java.net.ConnectException) {
-            // Excepción lanzada cuando no se puede establecer la conexión con el servidor
-            Log.e("CapturadoraPantallaSe", "No se pudo conectar al servidor: ${e.message}")
+             // Comienza a recibir datos del servidor
+             clientHandler(socket, surface)
+         } catch (e: java.net.ConnectException) {
+             // Excepción lanzada cuando no se puede establecer la conexión con el servidor
+             Log.e("CapturadoraPantallaSe", "No se pudo conectar al servidor: ${e.message}")
+         } catch (e: Exception) {
+             e.printStackTrace()
+         }
+     }
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
+    /*
+    *   clientHandler()
+    *
+    *   Se encarga de manejar la comunicación con el cliente
+    */
      fun clientHandler(clientSocket: Socket, surface: Surface? = null) {
         // Tamaño maximo del paquete
         val MAX_DATA_SIZE = 1024 * 1024 * 10 // 10 MB
@@ -70,12 +80,15 @@ object Client {
                     val outputSurface = surface?.lockCanvas(null)
                     val destRect = outputSurface?.let { Rect(0, 0, it.width, outputSurface.height) }
                     val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
+                    // Crea un objeto Paint para dibujar el bitmap en la superficie del cliente
                     val paint = Paint()
-                    // Dibuja el bitmap en la superficie del cliente
+
                     if (destRect != null) {
+                        // Dibuja el bitmap en la superficie del cliente
                         outputSurface.drawBitmap(bitmap, srcRect, destRect, paint)
                     }
                     if (surface != null) {
+                        // Desbloquea la superficie del cliente y la muestra en la pantalla
                         surface.unlockCanvasAndPost(outputSurface)
                     }
                     Log.d("Client", "Bitmap displayed")

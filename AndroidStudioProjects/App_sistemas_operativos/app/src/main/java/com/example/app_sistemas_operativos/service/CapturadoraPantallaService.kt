@@ -38,8 +38,8 @@ class CapturadoraPantallaService : Service() {
     private var clientIp: String? = "localhost"
     private var clientPort: Int = 0
     private var serverPort: Int = 0
-    private lateinit var serverSocket: ServerSocket
-    private val clients = CopyOnWriteArrayList<Socket>()
+
+    private var clientThread: Thread? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -82,7 +82,7 @@ class CapturadoraPantallaService : Service() {
             mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
 
             // Crea el servidor
-            createServer()
+            Server.createServer(this, serverPort)
 
             // Inicia la captura de pantalla
             startScreenCapture()
@@ -96,12 +96,11 @@ class CapturadoraPantallaService : Service() {
 
             // Conecta al servidor si los datos son validos
             if (clientIp != null && clientPort != 0) {
-                Thread {
+                clientThread = Thread {
                     Client.connectToServer(clientIp!!, clientPort, surface)
-                }.start()
+                }.apply { start() }
             }
         }
-
         return START_STICKY
     }
 
@@ -180,31 +179,6 @@ class CapturadoraPantallaService : Service() {
         }, null)
     }
 
-    private fun createServer(){
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val ipAddress = Formatter.formatIpAddress(wifiManager.connectionInfo.ipAddress)
-        Log.d("CapturadoraPantallaSe", "IP del servidor: $ipAddress")
-        Thread {
-            // Crea el servidor de sockets
-            serverSocket = ServerSocket(serverPort)
-            val serverAddress: InetAddress = serverSocket.inetAddress
-            val serverHostAddress: String = serverAddress.hostAddress
-            Log.d("CapturadoraPantallaSe", "Servidor iniciado en la dirección $serverHostAddress y en el puerto ${serverSocket.localPort}")
-
-            while (true) {
-                // Acepta una conexion
-                val clientSocket = serverSocket.accept()
-                clients.add(clientSocket)
-                Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
-
-                // Cuando se agrega un cliente, comienza la ejecucion del hilo para manejar la comunicacion con el cliente
-                Thread {
-                    Client.clientHandler(clientSocket)
-                }.start()
-            }
-        }.start()
-    }
-
     /*
     *   sendBitmapToServer().
     *
@@ -215,6 +189,7 @@ class CapturadoraPantallaService : Service() {
         // Comprime el bitmap en un arreglo de bytes
         val byteArray = bitmapToByteArray(bitmap)
         Thread {
+
             synchronized(clients) {
                 // Obtiene la lista de clientes conectados
                 val iterator = clients.iterator()
@@ -267,7 +242,16 @@ class CapturadoraPantallaService : Service() {
         return stream.toByteArray()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        clientThread?.interrupt()
+        surface.release()
+        socket.close()
+    }
+
     companion object {
+        val clients = CopyOnWriteArrayList<Socket>()
+
         const val EXTRA_RESULT_CODE = "RESULT_CODE"
         const val EXTRA_DATA = "DATA"
         const val EXTRA_SURFACE = "SURFACE"
