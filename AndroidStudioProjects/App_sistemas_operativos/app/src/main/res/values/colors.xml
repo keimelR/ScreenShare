@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="dark_blue">#004080</color> <!-- Azul marino -->
+    <color name="primary_button_color">#0059b3</color> <!-- Azul marino para botones principales -->
+    <color name="secondary_button_color">#008080</color> <!-- Verde azulado para botones secundarios -->
 </resources>

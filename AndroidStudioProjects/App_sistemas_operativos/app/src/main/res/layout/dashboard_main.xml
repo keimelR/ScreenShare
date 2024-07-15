@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/background_gradient"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/TittleScreenShare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/dark_blue"
+        android:text="Screen Share"
+        android:textColor="@android:color/white"
+        android:padding="10dp"
+        android:gravity="center"
+        android:textSize="24sp"
+        android:fontFamily="sans-serif-medium" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/DashboardClient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:padding="15dp"
+            android:text="Cliente"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/button_primary_background" />
+
+        <Button
+            android:id="@+id/DashboardServer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:padding="15dp"
+            android:text="Servidor"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/button_primary_background" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/DashboardAcercaDe"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:padding="15dp"
+        android:text="Acerca De"
+        android:textSize="18sp"
+        android:textColor="@android:color/white"
+        android:background="@drawable/button_primary_background"
+        android:layout_gravity="bottom" />
+
+</LinearLayout>
