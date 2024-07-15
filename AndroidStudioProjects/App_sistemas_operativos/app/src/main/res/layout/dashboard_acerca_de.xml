@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintStart_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="parent"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:textSize="20sp"
+        android:gravity="center_vertical"
+        android:text=
+            "Programa desarrollado por Héctor Tovar y Keimel Rodríguez como parte de la unidad curricular de Sistemas Operativos bajo la dirección del Ingeniero Oscar Salazar, este programa de Screen Share utiliza tecnología de sockets para establecer una conexión entre un servidor y su cliente.\nDe esta manera, el servidor puede transmitir su pantalla en tiempo real a los clientes, permitiéndoles visualizarla de manera remota, mientras estén en una misma red local."/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

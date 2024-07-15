@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/TittleScreenShare"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:background="@android:color/holo_red_light"
+        android:text="Screen Share"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:gravity="center"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/DashboardClient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:padding="20dp"
+            android:text="Cliente"
+            android:textSize="17sp"
+            android:background="@android:color/holo_red_light"/>
+
+        <Button
+            android:id="@+id/DashboardServer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:padding="20dp"
+            android:text="Servidor"
+            android:textSize="17sp"
+            android:background="@android:color/holo_red_light"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/DashboardAcercaDe"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp"
+        android:padding="20dp"
+        android:text="Acerca De"
+        android:textSize="17sp"
+        android:background="@android:color/holo_red_light"
+        android:layout_gravity="bottom"/> <!-- Colocar el botón en la parte inferior -->
+
+</LinearLayout>
