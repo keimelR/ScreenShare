@@ -247,18 +247,22 @@ class CapturadoraPantallaService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         clientThread?.interrupt()
-        if(::surface.isInitialized) {
+        if (::surface.isInitialized) {
             surface.release()
         }
         if (::socket.isInitialized) {
             socket.close()
         }
+        Server.stopServer()
         mediaProjection?.stop()
         if (::imageReader.isInitialized) {
             imageReader.close()
         }
         if (::virtualDisplay.isInitialized) {
             virtualDisplay.release()
+        }
+        if(clients.isNotEmpty()) {
+            clients.clear()
         }
     }
 

@@ -7,15 +7,16 @@ import android.util.Log
 import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.net.SocketException
 
 object Server {
-    // Servidor de sockets
     private var serverSocket: ServerSocket? = null
+    private var serverThread: Thread? = null
 
     /*
     *   createServer()
     *
-    *   Crea un servidor de sockets en el puerto especificado.
+    *   Crear el servidor en el puerto especificado
     */
     fun createServer(context: Context, serverPort: Int) {
         // Obtener la dirección IP del dispositivo
@@ -23,39 +24,56 @@ object Server {
         val ipAddress = Formatter.formatIpAddress(wifiManager.connectionInfo.ipAddress)
         Log.d("CapturadoraPantallaSe", "IP del servidor: $ipAddress")
 
-        // Inicia el servidor de sockets en un hilo separado
-        Thread {
+        // Crear el servidor
+        serverThread = Thread {
             try {
-                // Crea el servidor de sockets
+                // Iniciar el servidor
                 serverSocket = ServerSocket(serverPort)
 
-                // Obtiene la dirección del servidor
+                // Obtener la dirección del servidor
                 val serverAddress: InetAddress = serverSocket!!.inetAddress
                 val serverHostAddress: String = serverAddress.hostAddress
                 Log.d("CapturadoraPantallaSe", "Servidor iniciado en la dirección $serverHostAddress y en el puerto ${serverSocket!!.localPort}")
 
-                while (true) {
-                    // Acepta una conexión
-                    val clientSocket = serverSocket!!.accept()
+                while (!Thread.currentThread().isInterrupted) {
+                    try {
+                        // Aceptar conexiones
+                        val clientSocket = serverSocket!!.accept()
 
-                    // Agrega el cliente a la lista de clientes
-                    CapturadoraPantallaService.clients.add(clientSocket)
-                    Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
+                        // Añadir el cliente a la lista
+                        CapturadoraPantallaService.clients.add(clientSocket)
+                        Log.d("CapturadoraPantallaSe", "Cliente añadido a la lista")
 
-                    // Cuando se agrega un cliente, comienza la ejecución del hilo para manejar la comunicación con el cliente
-                    Thread {
-                        Client.clientHandler(clientSocket)
-                    }.start()
+                        // Procesar la conexión
+                        Thread {
+                            Client.clientHandler(clientSocket)
+                        }.start()
+                    } catch (e: SocketException) {
+                        // El servidor se ha cerrado
+                        if (!serverSocket!!.isClosed) {
+                            Log.e("CapturadoraPantallaSe", "Error en el servidor de sockets", e)
+                        }
+                        break
+                    }
                 }
             } catch (e: IOException) {
                 Log.e("CapturadoraPantallaSe", "Error en el servidor de sockets", e)
             } finally {
+                // Cerrar el servidor
                 serverSocket?.close()
             }
-        }.start()
+        }
+        // Iniciar el hilo del servidor
+        serverThread?.start()
     }
 
+    /*
+    *   stopServer()
+    *
+    *   Detiene el servidor
+    */
     fun stopServer() {
+        serverThread?.interrupt()
         serverSocket?.close()
     }
 }

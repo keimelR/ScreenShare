@@ -12,6 +12,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
+import com.example.app_sistemas_operativos.service.Server
 import java.net.NetworkInterface
 import java.util.Collections
 import java.util.Locale
