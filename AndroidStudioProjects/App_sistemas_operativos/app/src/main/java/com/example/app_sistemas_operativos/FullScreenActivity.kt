@@ -9,6 +9,7 @@ import android.view.TextureView
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app_sistemas_operativos.service.CapturadoraPantallaService
+import com.example.app_sistemas_operativos.service.Client
 
 class FullScreenActivity : AppCompatActivity() {
     private lateinit var textureView: TextureView
@@ -25,11 +26,7 @@ class FullScreenActivity : AppCompatActivity() {
 
         val backButton: Button = findViewById(R.id.backButton)
         backButton.setOnClickListener {
-            // Cierra la actividad actual y regresa a DashboardClientActivity
-            val intent = Intent(this, DashboardClientActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            finish() // Finaliza la actividad actual
-            startActivity(intent)
+            stopClientSessionAndNavigateBack()
         }
 
         if (textureView.isAvailable) {
@@ -44,6 +41,7 @@ class FullScreenActivity : AppCompatActivity() {
 
                 override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean {
                     surface?.release() // Libera la superficie
+                    surface = null
                     return true
                 }
 
@@ -69,9 +67,35 @@ class FullScreenActivity : AppCompatActivity() {
         }
     }
 
+    private fun stopClientSessionAndNavigateBack() {
+        Client.stopClient() // Detener el cliente
+        stopClientService()
+        releaseSurface()
+        val intent = Intent(this, DashboardClientActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        startActivity(intent)
+        finish() // Finaliza la actividad actual
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        stopClientSessionAndNavigateBack()
+    }
+
+    private fun stopClientService() {
+        val serviceIntent = Intent(this, CapturadoraPantallaService::class.java)
+        stopService(serviceIntent)
+    }
+
+    private fun releaseSurface() {
+        surface?.release()
+        surface = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        surface?.release() // Libera la superficie al destruir la actividad
+        Client.stopClient() // Asegurarse de detener el cliente al destruir la actividad
+        releaseSurface() // Libera la superficie al destruir la actividad
     }
 
     companion object {

@@ -18,28 +18,20 @@ import java.util.Locale
 
 class DashboardServerActivity : AppCompatActivity(){
     private lateinit var mediaProjectionManager: MediaProjectionManager
-    private lateinit var textureView: TextureView
-    private lateinit var clientIp: EditText
-    private lateinit var clientPort: EditText
     private lateinit var serverPort: EditText
     private lateinit var serverButton: Button
     private lateinit var serverButtonDisconnect: Button
-    private lateinit var clientButton: Button
     private lateinit var ipAddressTextView: TextView
 
     private var serviceIntent: Intent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_first)
+        setContentView(R.layout.dashboard_server)
 
-        textureView = findViewById(R.id.textureView)
         serverPort = findViewById(R.id.serverPortEditText)
         serverButton = findViewById(R.id.serverButton)
         serverButtonDisconnect = findViewById(R.id.serverButtonDisconnect)
-        clientIp = findViewById(R.id.clientIpEditText)
-        clientPort = findViewById(R.id.clientPortEditText)
-        clientButton = findViewById(R.id.clientButton)
         ipAddressTextView = findViewById(R.id.ipAddressTextView)
 
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -58,25 +50,6 @@ class DashboardServerActivity : AppCompatActivity(){
             serviceIntent?.let {
                 stopService(it)
                 serverButton.isEnabled = true
-            }
-        }
-
-        clientButton.setOnClickListener {
-            val ip = clientIp.text.toString()
-            val port = clientPort.text.toString().toInt()
-
-            serviceIntent = Intent(this, CapturadoraPantallaService::class.java).apply {
-                putExtra(CapturadoraPantallaService.EXTRA_IS_SERVER, false)
-                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_IP, ip)
-                putExtra(CapturadoraPantallaService.EXTRA_CLIENT_PORT, port)
-                putExtra(CapturadoraPantallaService.EXTRA_SURFACE, android.view.Surface(textureView.surfaceTexture))
-            }
-
-            // Verificar la versión de Android para iniciar el servicio en el modo correcto
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
             }
         }
     }

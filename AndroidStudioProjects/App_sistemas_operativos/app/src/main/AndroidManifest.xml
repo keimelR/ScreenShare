@@ -55,7 +55,10 @@
         <activity
             android:name=".FullScreenActivity"
             android:exported="true">
-
+        </activity>
+        <activity
+            android:name=".DashboardAcercaDeActivity"
+            android:exported="true">
         </activity>
     </application>
 

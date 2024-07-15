@@ -39,6 +39,7 @@ class CapturadoraPantallaService : Service() {
     private var clientPort: Int = 0
     private var serverPort: Int = 0
 
+    // Variables para gestionar y manejar los clientes
     private var clientThread: Thread? = null
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -96,6 +97,7 @@ class CapturadoraPantallaService : Service() {
 
             // Conecta al servidor si los datos son validos
             if (clientIp != null && clientPort != 0) {
+                // Conecta al servidor
                 clientThread = Thread {
                     Client.connectToServer(clientIp!!, clientPort, surface)
                 }.apply { start() }
@@ -245,8 +247,19 @@ class CapturadoraPantallaService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         clientThread?.interrupt()
-        surface.release()
-        socket.close()
+        if(::surface.isInitialized) {
+            surface.release()
+        }
+        if (::socket.isInitialized) {
+            socket.close()
+        }
+        mediaProjection?.stop()
+        if (::imageReader.isInitialized) {
+            imageReader.close()
+        }
+        if (::virtualDisplay.isInitialized) {
+            virtualDisplay.release()
+        }
     }
 
     companion object {

@@ -34,5 +34,10 @@ class firstActivity : AppCompatActivity() {
             val intent = Intent(this, DashboardServerActivity::class.java)
             startActivity(intent)
         }
+
+        buttonDashboardAcercaDe.setOnClickListener {
+            val intent = Intent(this, DashboardAcercaDeActivity::class.java)
+            startActivity(intent)
+        }
     }
 }
