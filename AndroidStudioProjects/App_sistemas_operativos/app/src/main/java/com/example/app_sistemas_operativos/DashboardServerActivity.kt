@@ -50,6 +50,7 @@ class DashboardServerActivity : AppCompatActivity(){
         serverButtonDisconnect.setOnClickListener {
             serviceIntent?.let {
                 stopService(it)
+                Server.stopServer()
                 serverButton.isEnabled = true
             }
         }

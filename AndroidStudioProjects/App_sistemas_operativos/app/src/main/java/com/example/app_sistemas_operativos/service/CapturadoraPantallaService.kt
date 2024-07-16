@@ -42,10 +42,26 @@ class CapturadoraPantallaService : Service() {
     // Variables para gestionar y manejar los clientes
     private var clientThread: Thread? = null
 
+    /*
+    *   Es invocado cuando un servicio esta vinculado a un Activity.
+    *
+    *   @param intent Intent que se uso para vincularse al service
+    *   @return Un IBinder para el canal de comunicación al servicio.
+     */
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
+    /*
+    *   onCreate().
+    *
+    *   Se ejecuta cuando el servicio es creado.
+    *   Inicializa el MediaProjectionManager.
+    *
+    *   @param intent La intención proporcionada para iniciar el servicio.
+    *   @param flags Datos adicionales sobre esta solicitud de inicio.
+    *   @param startId Un número entero único que representa esta solicitud específica para iniciar.
+    */
     override fun onCreate() {
         super.onCreate()
         // Inicializa el MediaProjectionManager
@@ -111,6 +127,8 @@ class CapturadoraPantallaService : Service() {
     *
     *   Ejecuta una notificacion al servicio para que el usuario sepa que el servicio esta corriendo.
     *   Ademas, es un requisito para que el servicio se ejecute en segundo plano.
+    *
+    *   @param isServer Indica si el servicio se está ejecutando en modo servidor.
     */
     private fun startForegroundService(isServer: Boolean) {
         // Asigna el título de la notificacion según el modo
@@ -186,6 +204,8 @@ class CapturadoraPantallaService : Service() {
     *
     *   Comprime el bitmap en un arreglo de bytes que se puede enviar al servidor.
     *   Envia el arreglo de bytes al servidor.
+    *
+    *   @param bitmap El mapa de bits que se enviará.
     */
     private fun sendBitmapToServer(bitmap: Bitmap) {
         // Comprime el bitmap en un arreglo de bytes
@@ -204,7 +224,7 @@ class CapturadoraPantallaService : Service() {
                             // Envia el arreglo de bytes al cliente
                             val outputStream = clientSocket.getOutputStream()
                             val dataOutputStream = DataOutputStream(outputStream)
-                            Log.d("Server", "Sending data of size: ${byteArray.size}")
+                            Log.d("Server", "Enviando data con un tamaño de: ${byteArray.size}")
 
                             synchronized(dataOutputStream) {
                                 // Envia el tamaño del arreglo de bytes
@@ -212,18 +232,18 @@ class CapturadoraPantallaService : Service() {
                                 // Envia el arreglo de bytes
                                 dataOutputStream.write(byteArray)
                                 dataOutputStream.flush()
-                                Log.d("Server", "Data sent")
+                                Log.d("Server", "Data enviada")
                             }
                         } else {
                             // Si el socket esta cerrado, lo elimina de la lista
-                            Log.e("Server", "Socket is closed, removing from clients list")
+                            Log.e("Server", "Socket ha sido cerrado, removiendo de la lista de clientes")
                             iterator.remove()
                         }
                     } catch (e: IOException) {
                         // Si hay un error al enviar el arreglo de bytes, lo elimina de la lista
                         e.printStackTrace()
-                        Log.e("Server", "Error sending data to client: ${e.message}")
-                        iterator.remove() // Remove client if there's an error
+                        Log.e("Server", "Error enviando la data al cliente: ${e.message}")
+                        iterator.remove()
                     }
                 }
             }
@@ -234,6 +254,9 @@ class CapturadoraPantallaService : Service() {
     *   bitmapToByteArray().
     *
     *   Comprime el bitmap en un arreglo de bytes.
+    *
+    *   @param bitmap El mapa de bits que se va a comprimir.
+    *   @return El array de bytes comprimida.
     */
     private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
         // Crea un flujo de salida en memoria para el bitmap
@@ -244,23 +267,42 @@ class CapturadoraPantallaService : Service() {
         return stream.toByteArray()
     }
 
+    /*
+    *   onDestroy().
+    *
+    *   Se ejecuta cuando el servicio es destruido.
+    *   Limpia los recursos
+     */
     override fun onDestroy() {
         super.onDestroy()
+
+        // Cierra el socket del servidor
         clientThread?.interrupt()
+
+        // Elimina el surface que visualiza la captura de pantalla
         if (::surface.isInitialized) {
             surface.release()
         }
+
+        // Cierra el socket del cliente
         if (::socket.isInitialized) {
             socket.close()
         }
-        Server.stopServer()
+
+        // Cierra la captura de pantalla
         mediaProjection?.stop()
+
+        // Cierra el ImageReader
         if (::imageReader.isInitialized) {
             imageReader.close()
         }
+
+        // Cierra el VirtualDisplay
         if (::virtualDisplay.isInitialized) {
             virtualDisplay.release()
         }
+
+        // Elimina los clientes conectados
         if(clients.isNotEmpty()) {
             clients.clear()
         }

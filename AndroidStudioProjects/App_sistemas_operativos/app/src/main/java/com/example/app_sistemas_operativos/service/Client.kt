@@ -18,6 +18,10 @@ object Client {
     *   connectToServer()
     *
     *   Se encarga de establecer la conexión con el servidor
+    *
+    *   @param clientIp Dirección IP del servidor al que se quiere conectar.
+    *   @param clientPort Puerto del servidor al que se quiere conectar.
+    *   @param surface Superficie en la que se mostrarán los datos recibidos.
     */
     fun connectToServer(clientIp: String, clientPort: Int, surface: Surface) {
         // Crea un socket para conectar al servidor
@@ -32,6 +36,7 @@ object Client {
             // Comienza a recibir datos del servidor
             isActive = true
             clientHandler(socket, surface)
+
         } catch (e: java.net.ConnectException) {
             // Excepción lanzada cuando no se puede establecer la conexión con el servidor
             Log.e("CapturadoraPantallaSe", "No se pudo conectar al servidor: ${e.message}")
@@ -43,7 +48,10 @@ object Client {
     /*
     *   clientHandler()
     *
-    *   Se encarga de manejar la comunicación con el cliente
+    *   Se encarga de manejar la comunicación con el cliente y recibir datos del servidor
+    *
+    *   @param clientSocket Socket que representa la conexión con el servidor.
+    *   @param surface Superficie en la que se mostrarán los datos recibidos (opcional).
     */
     fun clientHandler(clientSocket: Socket, surface: Surface? = null) {
         // Tamaño máximo del paquete
@@ -124,8 +132,6 @@ object Client {
     }
 
     /*
-    *   stopClient()
-    *
     *   Se encarga de detener la comunicación con el cliente
     */
     fun stopClient() {
